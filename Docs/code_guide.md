@@ -39,7 +39,8 @@ Assets/Scripts/
   Runtime/             DesertSettlement.Runtime — MonoBehaviour
     (루트)               GameSession(진입점, + .Commands 캠페인 명령·.SaveLoad 저장·.FallbackMap 대체 지형), BuildInputController(마우스 도구), StrategyCameraRig(카메라),
                          DebugSessionBuilder(씬 구성 한 벌을 코드로), RecordBook(최고 기록), HudInputBlocker(UI 위 클릭 차단)
-    UI/                  정식 화면(uGUI를 코드로 만든다). GameUi가 뿌리, 구역마다 *View 하나, UiKit = 버튼·글자 만드는 도구 + Theme(색·크기), Icons = 코드로 그리는 아이콘, Hotkeys = 단축키 표
+    UI/                  정식 화면(uGUI를 코드로 만든다). GameUi가 뿌리, 구역마다 *View 하나, UiKit = 버튼·글자 만드는 도구 + Theme(색·크기), Icons(+ .Facilities 시설·도구) = 코드로 그리는 아이콘, Hotkeys = 단축키 표·? 버튼 안내,
+                         HoverTip = UI 요소 툴팁(그리기는 TooltipView), HelpTexts = 도구 막대·자원 카드 툴팁 문구와 시설 아이콘 짝
     View/                맵 표시: SettlementView(타일·시설·수로, + .Lanterns 등불·.Labels 머리 위 글자 — 정식 UI보다 아래 캔버스), FacilityModels(시설 모양), FacilityInfo(한국어 문구),
                          DayNightLighting, WaterPathOverlay, BuildableOverlay, DesertBackdrop, WorldVisuals(머티리얼·메시 도우미)
     Tools/               MapSketch(예시 맵 그리기), HexMapDebugView(Gizmo 확인용)
@@ -97,7 +98,7 @@ UI 버튼·마우스 도구 → Settlement의 공개 명령(Settlement.Commands.
 
 ### 새 시설 종류
 1. JSON `buildingLevels`에 레벨표 2. `Core/Economy/FacilityCatalog.cs`에 한 줄(이름·분류·지형·색) — 둘이 어긋나면 설정 검증과 `FacilityCatalogTests`가 실패
-3. (선택) 모양 `Runtime/View/FacilityModels.cs`(없으면 상자)
+3. (선택) 모양 `Runtime/View/FacilityModels.cs`(없으면 상자) + 도구 막대 아이콘·툴팁 `Runtime/UI/HelpTexts.cs`의 `Facilities`에 한 줄(빠뜨리면 `HelpTextsTests` 실패, 새 그림은 `Icons.Facilities.cs`)
 4. 생산 시설이면: `SettlementRules.ResourceOf`(만드는 자원)와 `MaxOutput`(레벨표 × 배율)에 한 줄씩. 정산(`AdvanceHour`)·화면 예상치(`OutputOf`)·경매 가치(개발 중 자산·채석장 능력)·재해 배율이 모두 이 둘을 쓴다(결정 PR1). 식량·석재·광물이 아닌 새 자원이면 `ResourceKind`, `AdvanceHour`의 자원별 합계, `HourRecord`, 경매 가치까지 손대야 한다
 5. 경매 가치 인프라 보너스가 있으면: `InfraMultipliers`(EconomyConfig) + `SettlementValuation.InfraTable`에 한 줄(운영 중 합계와 공사 중 보너스가 함께 씀, 몇 개든 한 번만 세면 Once)
 6. 노동력(이슈 #31): 레벨마다 `buildWorkers`(공사 인원, 없으면 0명)를 넣는다. 운영에 사람이 필요하면 `workers`도 — 그러면 배치 순서·우선 고용·배치율이 저절로 걸린다(`SettlementRules.NeedsWorkers`). ⚠ `buildWorkers`를 빠뜨리면 공사에 사람이 안 들어 노동력 규칙을 건너뛴다. 봇 계획(`ReferenceBot.Plan`)이 그 시설을 지으면 주택 수도 따라 늘어난다
@@ -183,8 +184,9 @@ v0.8 원본 값(테스트의 `V08Golden`, `Assets/Tests/EditMode/TestData.cs`)�
 | 건설 가능 타일 강조 색·주기 · 맵 바깥 모래언덕 | `BuildableOverlay` · `DesertBackdrop` 인스펙터(GameSession 오브젝트) |
 | 팝업·정보창 문구, 지형 이름, 재해 문구 | `Runtime/View/FacilityInfo.cs` (시설 이름은 `FacilityCatalog`) |
 | UI 색·글자 크기·간격 | `Runtime/UI/UiKit.cs`의 `Theme` |
-| 키보드 단축키 | `Runtime/UI/Hotkeys.cs`의 표(카메라 이동·회전은 `StrategyCameraRig`, 도구 해제 Esc는 `BuildInputController`) |
-| UI 구역 위치·크기 | 위쪽 띠 `TopBarView`, 도구 막대 `BuildBarView`, 시장·예시 `BuyPanelView`, 알림 `AlertsView`, 정보창 `InspectorView`, 가운데 창(경매·행선지·파산) `ModalView`·`ModalContent`, 툴팁 `TooltipView` |
+| 키보드 단축키 | `Runtime/UI/Hotkeys.cs`의 표 — 설명은 오른쪽 아래 ? 버튼 안내가 된다(카메라 이동·회전은 `StrategyCameraRig`, 도구 해제 Esc는 `BuildInputController` — 바꾸면 `Hotkeys.OtherControls`도) |
+| 건설 버튼·자원 카드 툴팁 문구, 시설 아이콘 | `Runtime/UI/HelpTexts.cs`(수치는 레벨표에서 읽음), 그림은 `Runtime/UI/Icons.cs`·`Icons.Facilities.cs` |
+| UI 구역 위치·크기 | 위쪽 띠 `TopBarView`, 도구 막대 `BuildBarView`, 시장·예시 `BuyPanelView`, 알림 `AlertsView`, 정보창 `InspectorView`, 가운데 창(경매·행선지·파산) `ModalView`·`ModalContent`, 툴팁 `TooltipView`, ? 버튼 `GameUi.BuildHelpButton` |
 | 도구 목록·조작 방식 | `Runtime/BuildInputController.cs`(`BuildTool`, `Apply`) |
 | 카메라 속도·각도·줌·회전 | `CameraRig` 오브젝트의 `StrategyCameraRig` 인스펙터 |
 | 자금 0 예측 경고 | `Runtime/UI/AlertsView.cs`의 `CashRunsOutIn` |
@@ -209,6 +211,7 @@ v0.8 원본 값(테스트의 `V08Golden`, `Assets/Tests/EditMode/TestData.cs`)�
   — 난이도 기준은 `smart`(숙련 봇). `halls=k` 봇이 경매장 k개, `late=…`는 후반 가속 값 덮어쓰기(모두 0 = 가속 없음), `trade=off` 시장 규칙 없음, `market=0`·`sell=0` 봇이 시장을 안 짓거나 안 팖.
   기준 측정: `mods campaign 0.25 14000 30 smart`(결과 해석은 `Docs/handoff.md` 3절)
 - 새 시스템 밸런스 QA `qa [static|marginal] [D마다 맵 수] [water2] [lab=후보]`(`BalanceQa.cs`): `static` = 시설 L1~L3 수치표(순 식량 가치·판매 부가가치·일손당·물당)와 재화별 시장 최대 수입, `marginal` = 생성 맵마다 봇 계획 뒤 시설(+ 주택)·우물 개량을 더 해서 첫 경매 최종 자금을 같은 맵끼리 비교(재화 먹기·팔기, 생활 효과 끈 갈래, 기준 갈래의 생활 수준·물 여유 진단). `water2` = 우물·수로 ×2(물 경쟁 없이 시설 자체의 값), `lab=` = `LaborCandidates`의 후보를 모든 갈래에 건다
+- 병목·파산 `bottleneck [campaigns=20] [n=40] [diet] [maps=5] [hold=k] [sc.mult=x sc.stacks=k sc.bonus=x] [nodisaster] [wells=0] [diag=k] [d.키=값] [m.키=값]`(`Bottlenecks.cs`): 숙련 봇 캠페인(스테이지마다 본선이 고르지 않은 후보 맵 `maps`곳도 같은 자금·모디파이어로 복제해 플레이, 본선은 그대로)에서 매 시간 걸린 병목(광산 물·기타 물·일손·식량·석재·공사 슬롯·창고·재해·자금 100 미만)의 비율을 D 구간·정착지 안 시간 구간별로, 스테이지마다 순이익·최저 자금·긴급 매각·파산을 낸다(CSV도 함께). `hold=k` = 곁가지 표본은 정기 경매를 k번 보류한 뒤 팔아 날마다 '중립 경매 가치 + 자금'을 그린다(보유 곡선, 팔기 좋은 날), `sc.*` = 시작 자금 모디파이어 후보(배율·최대 중첩·받은 개수당 고정 보너스, 결정 BM5), `wells=0` = 숙련 봇의 우물 개량을 끔, `d.키=값`·`m.키=값` = 절차 맵 `difficulty`·`modifiers` 값을 덮어써 후보 비교(끝의 '■ 요약' 한 줄이 후보표용)
 - 매각 시점 `selltime [n=2,4] [holds=4] [hold=x] [diet] [lab=…]`(`SellTiming.cs`): 숙련 봇 캠페인에서 n번째 정착지만 정기 경매를 k번 보류한 뒤 팔아 순이익을 비교(언제 파는 게 이득인지의 곡선, `hold=` = 보류 시세 감소 후보)
 - 결정이 끝난 측정(다시 잴 일이 있을 때만, 머리 주석에 '결정 완료'): `exploit`, `funboost`, `bidders`. 전염병 후보 비교 `epidemic [맵 수]`·`epidemic sweep`(감염·회복 모형, 결정 EV7), 노동력 `labor`(진단·`sample`)와 `mods campaign … lab=후보`(결정 LB13). 진단 도구: `botdiag`(측정 봇 보완용). 예전 72h 경매를 전제한 `funcheck`·`upgrades`는 지웠다(결정 SM1)
 - 여러 후보를 동시에 재려면 `dotnet build Tools/SettlementSim -c Release` 뒤 `dotnet Tools/SettlementSim/bin/Release/net10.0/SettlementSim.dll mods campaign …`을 병렬로. 콘솔 출력은 cp949라 Git Bash에서는 `iconv -f cp949 -t utf-8`
